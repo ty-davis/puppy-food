@@ -17,3 +17,4 @@ generate:
 
 test:
 	cd backend && go test ./...
+	cd frontend && npm test

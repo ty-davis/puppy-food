@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { FeedingFeeding } from '../api/generated/types.gen'
 import { loadFeedings, updateCompletion } from '../lib/api'
 import { addDays, dateFromKey, formatClock, formatDay, formatQuantity, localDateKey, localMidnightUtc } from '../lib/dates'
+import { chooseFeedingForDay, chooseInitialFeeding } from '../lib/feeding-selection'
 
 const today = localDateKey(new Date())
 const dates = ref<string[]>([])
@@ -13,7 +14,6 @@ const loading = ref(false)
 const changingId = ref('')
 const errorMessage = ref('')
 const calendar = ref<HTMLElement>()
-const lastVisitKey = 'puppy-food-last-visit'
 let extending = false
 
 const selectedFeedings = computed(() => feedingsFor(selectedDate.value))
@@ -49,28 +49,6 @@ function fillDates(start: string, count: number): string[] {
   return Array.from({ length: count }, (_, index) => addDays(start, index))
 }
 
-function nearestForToday(): FeedingFeeding | undefined {
-  const todayFeedings = feedingsFor(today)
-  const now = Date.now()
-  const upcomingToday = todayFeedings.find((feeding) => !feeding.completed && new Date(feeding.scheduledAt ?? 0).getTime() >= now)
-  if (upcomingToday) return upcomingToday
-
-  if (todayFeedings.length > 0 && todayFeedings.every((feeding) => feeding.completed)) {
-    return closestToNow(todayFeedings)
-  }
-
-  const upcoming = feedings.value
-    .filter((feeding) => !feeding.completed && new Date(feeding.scheduledAt ?? 0).getTime() >= now)
-    .sort((a, b) => new Date(a.scheduledAt ?? 0).getTime() - new Date(b.scheduledAt ?? 0).getTime())
-  return upcoming[0] ?? closestToNow(todayFeedings)
-}
-
-function closestToNow(items: FeedingFeeding[]): FeedingFeeding | undefined {
-  return [...items].sort((a, b) =>
-    Math.abs(new Date(a.scheduledAt ?? 0).getTime() - Date.now()) - Math.abs(new Date(b.scheduledAt ?? 0).getTime() - Date.now()),
-  )[0]
-}
-
 function selectFeedingDay(feeding: FeedingFeeding | undefined) {
   if (!feeding?.scheduledAt) return
   selectedDate.value = localDateKey(new Date(feeding.scheduledAt))
@@ -80,9 +58,7 @@ function selectFeedingDay(feeding: FeedingFeeding | undefined) {
 function selectDate(key: string) {
   selectedDate.value = key
   const dayFeedings = feedingsFor(key)
-  const now = Date.now()
-  const next = dayFeedings.find((feeding) => !feeding.completed && new Date(feeding.scheduledAt ?? 0).getTime() >= now)
-  const selected = next ?? closestToNow(dayFeedings)
+  const selected = chooseFeedingForDay(dayFeedings, Date.now())
   openId.value = selected?.id ?? ''
 }
 
@@ -149,14 +125,10 @@ function isSelectedToday(key: string): boolean {
 let midnightRefresh: number | undefined
 
 onMounted(async () => {
-  const previousVisit = Number(localStorage.getItem(lastVisitKey) ?? 0)
-  const staleVisit = !previousVisit || Date.now() - previousVisit >= 15 * 60 * 1000
-  localStorage.setItem(lastVisitKey, String(Date.now()))
-
   const start = addDays(today, -7)
   dates.value = fillDates(start, 30)
   await fetchRange(start, addDays(start, 30))
-  if (staleVisit) selectFeedingDay(nearestForToday())
+  selectFeedingDay(chooseInitialFeeding(feedings.value, today, Date.now()))
   await nextTick()
   scrollDateIntoView(selectedDate.value)
 
@@ -236,7 +208,7 @@ onBeforeUnmount(() => {
                 <div v-for="(item, index) in feeding.items ?? []" :key="index" class="flex items-baseline justify-between gap-4">
                   <span v-if="item.name" class="truncate text-sm text-slate-600 dark:text-slate-300">{{ item.name }}</span>
                   <span v-else class="text-sm text-slate-600 dark:text-slate-300">{{ index === 0 && feeding.items?.length === 1 ? 'Food' : '' }}</span>
-                  <span class="shrink-0 text-lg font-semibold tabular-nums">{{ formatQuantity(item.quantity ?? 0) }} {{ item.unit }}</span>
+                  <span class="shrink-0 text-lg font-semibold tabular-nums">{{ formatQuantity(item.quantity ?? 0, item.unit) }} {{ item.unit }}</span>
                 </div>
               </div>
               <button
