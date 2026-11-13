@@ -1,0 +1,10 @@
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+backend/data/
+puppy-food
+.env
+*.db
+*.db-shm
+*.db-wal
+.DS_Store

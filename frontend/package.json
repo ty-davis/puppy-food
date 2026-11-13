@@ -1,0 +1,28 @@
+{
+  "name": "puppy-food-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "generate:api": "openapi-ts"
+  },
+  "dependencies": {
+    "vue": "^3.5.45",
+    "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0",
+    "@tailwindcss/vite": "^4.3.5",
+    "@vitejs/plugin-vue": "^6.0.2",
+    "tailwindcss": "^4.3.5",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.12",
+    "vue-tsc": "^3.1.4"
+  },
+  "overrides": {
+    "@hey-api/json-schema-ref-parser": "1.4.1"
+  }
+}

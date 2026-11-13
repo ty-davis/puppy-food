@@ -1,0 +1,272 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Puppy Feeding Schedule",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/feedings": {
+      "get": {
+        "summary": "List feedings",
+        "description": "List scheduled feedings between two UTC timestamps.",
+        "operationId": "listFeedings",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedingFeedingList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/feedings/{id}": {
+      "patch": {
+        "summary": "Complete or remove a feeding",
+        "operationId": "setFeedingCompletion",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "completed": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "completed": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schedules": {
+      "post": {
+        "summary": "Publish schedule",
+        "description": "Publish a standard or weaning schedule. A newer schedule replaces overlapping dates.",
+        "operationId": "publishSchedule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedingPublishInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedingPublishResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FeedingFeeding": {
+        "properties": {
+          "completed": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FeedingFeedingItem"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "phase": {
+            "type": "string"
+          },
+          "scheduledAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FeedingFeedingItem": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "format": "double",
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FeedingFeedingList": {
+        "properties": {
+          "feedings": {
+            "items": {
+              "$ref": "#/components/schemas/FeedingFeeding"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "FeedingPublishInput": {
+        "properties": {
+          "endAt": {
+            "format": "date-time",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mode": {
+            "type": "string"
+          },
+          "standard": {
+            "$ref": "#/components/schemas/FeedingStandard"
+          },
+          "startAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "times": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "weaning": {
+            "$ref": "#/components/schemas/FeedingWeaning"
+          }
+        },
+        "type": "object"
+      },
+      "FeedingPublishResult": {
+        "properties": {
+          "scheduleId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "FeedingStandard": {
+        "properties": {
+          "amountMode": {
+            "type": "string"
+          },
+          "quantity": {
+            "format": "double",
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FeedingWeaning": {
+        "properties": {
+          "newFood": {
+            "type": "string"
+          },
+          "newQuantity": {
+            "format": "double",
+            "type": "number"
+          },
+          "newUnit": {
+            "type": "string"
+          },
+          "oldFood": {
+            "type": "string"
+          },
+          "oldQuantity": {
+            "format": "double",
+            "type": "number"
+          },
+          "oldUnit": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    }
+  }
+}
